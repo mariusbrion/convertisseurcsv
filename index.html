@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur CSV - Format Employé/Employeur</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .format-info {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .format-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .format-example {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.drag-over {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .upload-text {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .progress {
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 15px;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .error {
+            margin-top: 20px;
+            padding: 20px;
+            background: #ffe6e6;
+            border-radius: 15px;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+            display: none;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .file-info {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+            border-radius: 10px;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Convertisseur CSV</h1>
+        <p class="subtitle">Transformez vos fichiers CSV de 4 colonnes au format 2 colonnes</p>
+
+        <div class="format-info">
+            <h3>📋 Format d'entrée (4 colonnes)</h3>
+            <div class="format-example">
+                Rue (salarié),Commune (salarié),Code postal (salarié),Commune (site travail employeur)
+            </div>
+
+            <h3>📤 Format de sortie (2 colonnes)</h3>
+            <div class="format-example">
+                adresse employé,adresse employeur<br>
+                "Bordeaux;Rue Lecoq","Hôpital Pellegrin (EFS);Place Amélie Raba Léon"
+            </div>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">📁</span>
+            <div class="upload-text">Glissez-déposez votre fichier CSV ici</div>
+            <div class="upload-subtext">ou cliquez pour sélectionner un fichier</div>
+            <input type="file" id="fileInput" accept=".csv" />
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <h4>📊 Informations du fichier</h4>
+            <div id="fileName"></div>
+            <div class="stats" id="stats"></div>
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="spinner"></div>
+            <div>Traitement en cours...</div>
+        </div>
+
+        <div class="result" id="result">
+            <h4>✅ Conversion réussie !</h4>
+            <p>Votre fichier a été converti avec succès au format requis.</p>
+        </div>
+
+        <div class="error" id="error">
+            <h4>❌ Erreur</h4>
+            <p id="errorMessage"></p>
+        </div>
+
+        <div class="button-group">
+            <button class="btn" id="convertBtn" disabled onclick="convertFile()">
+                🔄 Convertir le fichier
+            </button>
+            <button class="btn" id="downloadBtn" style="display: none;" onclick="downloadConvertedFile()">
+                📥 Télécharger le fichier converti
+            </button>
+            <a href="https://mariusbrion.github.io/convertisseur/" class="btn btn-secondary" id="nextBtn" style="display: none;">
+                ➡️ Suivant
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let originalData = [];
+        let convertedData = [];
+        let fileName = '';
+
+        // Gestion du drag & drop et sélection de fichier
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showError('Veuillez sélectionner un fichier CSV.');
+                return;
+            }
+
+            fileName = file.name;
+            showProgress();
+            
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                encoding: 'UTF-8',
+                complete: function(results) {
+                    hideProgress();
+                    
+                    if (results.errors.length > 0) {
+                        showError('Erreur lors de la lecture du fichier: ' + results.errors[0].message);
+                        return;
+                    }
+
+                    originalData = results.data;
+                    validateAndShowFileInfo();
+                },
+                error: function(error) {
+                    hideProgress();
+                    showError('Erreur lors de la lecture du fichier: ' + error.message);
+                }
+            });
+        }
+
+        function validateAndShowFileInfo() {
+            if (originalData.length === 0) {
+                showError('Le fichier CSV est vide.');
+                return;
+            }
+
+            const headers = Object.keys(originalData[0]);
+            
+            // Nettoyage des en-têtes (suppression des espaces)
+            const cleanHeaders = headers.map(h => h.trim().toLowerCase());
+            
+            // Vérification des colonnes attendues (flexible sur les noms)
+            const requiredColumns = ['rue', 'commune', 'code postal', 'site travail'];
+            const hasRequiredColumns = requiredColumns.every(col => 
+                cleanHeaders.some(header => header.includes(col.toLowerCase()) || 
+                                           header.includes(col.replace(' ', '').toLowerCase()))
+            );
+
+            if (!hasRequiredColumns && headers.length !== 4) {
+                showError(`Le fichier doit contenir 4 colonnes. Colonnes trouvées: ${headers.join(', ')}`);
+                return;
+            }
+
+            // Affichage des informations du fichier
+            document.getElementById('fileName').innerHTML = `<strong>📄 ${fileName}</strong>`;
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${originalData.length}</div>
+                    <div class="stat-label">Lignes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">${headers.length}</div>
+                    <div class="stat-label">Colonnes</div>
+                </div>
+            `;
+            
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('convertBtn').disabled = false;
+            hideError();
+        }
+
+        function convertFile() {
+            if (originalData.length === 0) {
+                showError('Aucun fichier à convertir.');
+                return;
+            }
+
+            showProgress();
+
+            try {
+                const headers = Object.keys(originalData[0]);
+                convertedData = [];
+
+                originalData.forEach((row, index) => {
+                    try {
+                        // Récupération des valeurs (gestion flexible des noms de colonnes)
+                        const values = Object.values(row);
+                        
+                        let rue = '', commune = '', codePostal = '', siteEmployeur = '';
+                        
+                        // Attribution des valeurs selon l'ordre ou le nom des colonnes
+                        if (values.length >= 4) {
+                            rue = (values[0] || '').toString().trim();
+                            commune = (values[1] || '').toString().trim();
+                            codePostal = (values[2] || '').toString().trim();
+                            siteEmployeur = (values[3] || '').toString().trim();
+                        } else {
+                            // Tentative de mapping par nom de colonne
+                            headers.forEach((header, idx) => {
+                                const h = header.toLowerCase().trim();
+                                const value = (values[idx] || '').toString().trim();
+                                
+                                if (h.includes('rue')) rue = value;
+                                else if (h.includes('commune') && !h.includes('site') && !h.includes('travail')) commune = value;
+                                else if (h.includes('code') && h.includes('postal')) codePostal = value;
+                                else if (h.includes('site') || h.includes('travail') || h.includes('employeur')) siteEmployeur = value;
+                            });
+                        }
+
+                        // Construction de l'adresse employé
+                        let adresseEmploye = '';
+                        if (commune && rue) {
+                            adresseEmploye = `${commune};${rue}`;
+                        } else if (commune) {
+                            adresseEmploye = commune;
+                        } else if (rue) {
+                            adresseEmploye = rue;
+                        }
+
+                        // Ajout du code postal si disponible
+                        if (codePostal && adresseEmploye) {
+                            adresseEmploye = `${adresseEmploye} (${codePostal})`;
+                        }
+
+                        // Adresse employeur
+                        const adresseEmployeur = siteEmployeur || '';
+
+                        // Vérification que nous avons au moins une adresse
+                        if (adresseEmploye || adresseEmployeur) {
+                            convertedData.push({
+                                'adresse employé': adresseEmploye,
+                                'adresse employeur': adresseEmployeur
+                            });
+                        }
+                    } catch (rowError) {
+                        console.warn(`Erreur ligne ${index + 1}:`, rowError);
+                    }
+                });
+
+                hideProgress();
+
+                if (convertedData.length === 0) {
+                    showError('Aucune donnée valide trouvée pour la conversion.');
+                    return;
+                }
+
+                showResult();
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+
+            } catch (error) {
+                hideProgress();
+                showError('Erreur lors de la conversion: ' + error.message);
+            }
+        }
+
+        function downloadConvertedFile() {
+            if (convertedData.length === 0) {
+                showError('Aucune donnée convertie à télécharger.');
+                return;
+            }
+
+            const csv = Papa.unparse(convertedData, {
+                header: true,
+                delimiter: ',',
+                quotes: true
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName.replace('.csv', '_converti.csv'));
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showProgress() {
+            document.getElementById('progress').style.display = 'block';
+            hideError();
+            hideResult();
+        }
+
+        function hideProgress() {
+            document.getElementById('progress').style.display = 'none';
+        }
+
+        function showResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h4>✅ Conversion réussie !</h4>
+                <p>Votre fichier a été converti avec succès. <strong>${convertedData.length}</strong> lignes ont été traitées.</p>
+            `;
+            hideError();
+        }
+
+        function hideResult() {
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+            hideResult();
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
