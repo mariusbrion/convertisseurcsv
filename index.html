@@ -313,7 +313,6 @@
         let convertedData = [];
         let fileName = '';
 
-        // Gestion du drag & drop et sélection de fichier
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
 
@@ -388,10 +387,8 @@
 
             const headers = Object.keys(originalData[0]);
             
-            // Nettoyage des en-têtes (suppression des espaces)
             const cleanHeaders = headers.map(h => h.trim().toLowerCase());
             
-            // Vérification des colonnes attendues (flexible sur les noms)
             const requiredColumns = ['rue', 'commune', 'code postal', 'site travail'];
             const hasRequiredColumns = requiredColumns.every(col => 
                 cleanHeaders.some(header => header.includes(col.toLowerCase()) || 
@@ -403,7 +400,6 @@
                 return;
             }
 
-            // Affichage des informations du fichier
             document.getElementById('fileName').innerHTML = `<strong>📄 ${fileName}</strong>`;
             document.getElementById('stats').innerHTML = `
                 <div class="stat-item">
@@ -435,19 +431,16 @@
 
                 originalData.forEach((row, index) => {
                     try {
-                        // Récupération des valeurs (gestion flexible des noms de colonnes)
                         const values = Object.values(row);
                         
                         let rue = '', commune = '', codePostal = '', siteEmployeur = '';
                         
-                        // Attribution des valeurs selon l'ordre ou le nom des colonnes
                         if (values.length >= 4) {
                             rue = (values[0] || '').toString().trim();
                             commune = (values[1] || '').toString().trim();
                             codePostal = (values[2] || '').toString().trim();
                             siteEmployeur = (values[3] || '').toString().trim();
                         } else {
-                            // Tentative de mapping par nom de colonne
                             headers.forEach((header, idx) => {
                                 const h = header.toLowerCase().trim();
                                 const value = (values[idx] || '').toString().trim();
@@ -459,7 +452,7 @@
                             });
                         }
 
-                        // Construction de l'adresse employé
+                        // Construction simple sans correction
                         let adresseEmploye = '';
                         if (commune && rue) {
                             adresseEmploye = `${commune};${rue}`;
@@ -469,15 +462,12 @@
                             adresseEmploye = rue;
                         }
 
-                        // Ajout du code postal si disponible
                         if (codePostal && adresseEmploye) {
                             adresseEmploye = `${adresseEmploye} (${codePostal})`;
                         }
 
-                        // Adresse employeur
                         const adresseEmployeur = siteEmployeur || '';
 
-                        // Vérification que nous avons au moins une adresse
                         if (adresseEmploye || adresseEmployeur) {
                             convertedData.push({
                                 'adresse employé': adresseEmploye,
