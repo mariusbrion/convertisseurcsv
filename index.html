@@ -302,7 +302,8 @@
             <button class="btn" id="downloadBtn" style="display: none;" onclick="downloadConvertedFile()">
                 📥 Télécharger le fichier converti
             </button>
-            <a href="https://mariusbrion.github.io/convertisseur/" class="btn btn-secondary" id="nextBtn" style="display: none;">
+            <!-- MODIFICATION ICI: Suppression du display:none et ajout de target="_blank" -->
+            <a href="https://mariusbrion.github.io/convertisseur/" class="btn btn-secondary" id="nextBtn" target="_blank" rel="noopener noreferrer">
                 ➡️ Suivant
             </a>
         </div>
@@ -392,7 +393,7 @@
             const requiredColumns = ['rue', 'commune', 'code postal', 'site travail'];
             const hasRequiredColumns = requiredColumns.every(col => 
                 cleanHeaders.some(header => header.includes(col.toLowerCase()) || 
-                                           header.includes(col.replace(' ', '').toLowerCase()))
+                                             header.includes(col.replace(' ', '').toLowerCase()))
             );
 
             if (!hasRequiredColumns && headers.length !== 4) {
@@ -488,6 +489,7 @@
 
                 showResult();
                 document.getElementById('downloadBtn').style.display = 'inline-block';
+                // Note: nextBtn est maintenant toujours visible, cette ligne ne change rien mais ne casse rien
                 document.getElementById('nextBtn').style.display = 'inline-block';
 
             } catch (error) {
