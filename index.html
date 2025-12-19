@@ -247,6 +247,30 @@
             color: #666;
             font-size: 0.9em;
         }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 17px;
+            opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -295,6 +319,9 @@
             <p id="errorMessage"></p>
         </div>
 
+        <!-- Ajout de l'élément Toast pour les notifications -->
+        <div id="toast" class="toast"></div>
+
         <div class="button-group">
             <button class="btn" id="convertBtn" disabled onclick="convertFile()">
                 🔄 Convertir le fichier
@@ -302,8 +329,7 @@
             <button class="btn" id="downloadBtn" style="display: none;" onclick="downloadConvertedFile()">
                 📥 Télécharger le fichier converti
             </button>
-            <!-- MODIFICATION ICI: Suppression du display:none et ajout de target="_blank" -->
-            <a href="https://mariusbrion.github.io/convertisseur/" class="btn btn-secondary" id="nextBtn" target="_blank" rel="noopener noreferrer">
+            <a href="#" class="btn btn-secondary" id="nextBtn" onclick="handleNextStep(event)">
                 ➡️ Suivant
             </a>
         </div>
@@ -555,6 +581,48 @@
 
         function hideError() {
             document.getElementById('error').style.display = 'none';
+        }
+
+        function handleNextStep(event) {
+            event.preventDefault();
+            const nextUrl = "https://mariusbrion.github.io/convertisseur/";
+
+            // Si aucune donnée n'a été convertie, on ouvre juste le lien
+            if (convertedData.length === 0) {
+                window.open(nextUrl, '_blank');
+                return;
+            }
+
+            try {
+                // Sauvegarde des données dans le sessionStorage
+                sessionStorage.setItem('diagnostique_transit', JSON.stringify(convertedData));
+
+                // Vérification que les données sont bien sauvegardées
+                const storedData = sessionStorage.getItem('diagnostique_transit');
+                
+                if (storedData) {
+                    // Affiche le message de confirmation
+                    showToast('Données prêtes pour l\'étape suivante');
+                    
+                    // Ouvre l'URL dans un nouvel onglet après un court délai pour voir le message
+                    setTimeout(() => {
+                        window.open(nextUrl, '_blank');
+                    }, 1000);
+                } else {
+                    throw new Error("Échec de la vérification des données.");
+                }
+            } catch (e) {
+                console.error("Erreur sauvegarde:", e);
+                // En cas d'erreur, on essaie quand même d'ouvrir le site
+                window.open(nextUrl, '_blank');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.className = "toast show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
         }
     </script>
 </body>
